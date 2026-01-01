@@ -63,3 +63,35 @@ ALTER TABLE `email_verifications`
 ALTER TABLE `register_codes`
   ADD CONSTRAINT `fk_register_codes_user` FOREIGN KEY (`used_by`) REFERENCES `users` (`id`) ON DELETE SET NULL;
 
+--
+-- Tabellenstruktur für Tabelle `profile_images`
+--
+
+CREATE TABLE `profile_images` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `file_path` varchar(255) NOT NULL,
+  `uploaded_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Indizes für die Tabelle `profile_images`
+--
+ALTER TABLE `profile_images`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`);
+
+--
+-- AUTO_INCREMENT für Tabelle `profile_images`
+--
+ALTER TABLE `profile_images`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- Constraints der Tabelle `profile_images`
+--
+ALTER TABLE `profile_images`
+  ADD CONSTRAINT `profile_images_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+

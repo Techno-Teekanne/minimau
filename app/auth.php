@@ -393,11 +393,24 @@ class AuthService
 
     private function deleteUserData(int $userId): void
     {
+        $imageStmt = $this->db->prepare(
+            "SELECT file_path FROM profile_images WHERE user_id = :uid"
+        );
+        $imageStmt->execute(['uid' => $userId]);
+        $paths = $imageStmt->fetchAll(PDO::FETCH_COLUMN);
+        foreach ($paths as $path) {
+            $fullPath = dirname(__DIR__) . '/' . ltrim($path, '/');
+            if (is_file($fullPath)) {
+                @unlink($fullPath);
+            }
+        }
+
         $tables = [
             ['auth_sessions_v2', 'user_id'],
             ['email_verifications', 'user_id'],
             ['mau_link_tokens', 'user_id'],
             ['profile_boxes', 'user_id'],
+            ['profile_images', 'user_id'],
             ['rpgm_character', 'owner_user_id'],
             ['rpgm_post', 'user_id'],
             ['user_achievements', 'user_id'],
