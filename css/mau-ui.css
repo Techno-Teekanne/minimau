@@ -1,0 +1,1102 @@
+/* ==========================================================
+   MAU DESIGN LIBRARY v1.1
+   Foundation + Glow Engine + Desktop OS + App UI + Legacy Adapters
+
+   Ziel:
+   - Stabiler, lesbarer CSS-Kern
+   - MAU-Glow bleibt MAU-Glow
+   - Steam-Look bleibt verfügbar, aber kontrolliert
+   - Alte Klassen bleiben nutzbar (Adapter), ohne HTML-Rewrite
+
+   Schichten:
+   01) TOKENS / RESET
+   02) BASE / TYPO / LINKS / SCROLL
+   03) GLOW ENGINE
+   04) LAYOUT (App Shell, Sidebar, Topbar, Panels)
+   05) CONTROLS (Buttons, Inputs, Chips, Badges)
+   06) OVERLAYS (Modal, Tooltip, Context)
+   07) BOOT + AUTH (Login/Boot)
+   08) DESKTOP OS (Windows, Sidebar launcher)
+   09) PRIO (Hookpoints)
+   10) LEGACY ADAPTERS (Steam button classes & old MAU)
+========================================================== */
+
+/* ==========================================================
+   01) TOKENS / RESET
+========================================================== */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+:root{
+  /* --- Core surfaces --- */
+  --mau-bg-0: #050505;
+  --mau-bg-1: #0b0b0b;
+  --mau-bg-2: #111111;
+  --mau-panel: #101010;
+
+  --mau-text: #e8ecf3;
+  --mau-text-dim: rgba(232,236,243,0.72);
+  --mau-text-muted: rgba(232,236,243,0.52);
+
+  --mau-border: rgba(255,255,255,0.12);
+  --mau-border-strong: rgba(255,255,255,0.18);
+
+  /* --- Brand / accents (MAU) --- */
+  --mau-accent: #53a7ff;
+  --mau-accent-2: #ae00ff; /* optional secondary for special states */
+  --mau-danger: #ff6b6b;
+  --mau-success: #45d483;
+  --mau-warn: #ffd000;
+
+  /* --- Glow presets --- */
+  --mau-glow-soft: 0 0 10px rgba(83,167,255,0.35);
+  --mau-glow-mid: 0 0 18px rgba(83,167,255,0.55);
+  --mau-glow-strong: 0 0 30px rgba(83,167,255,0.75);
+
+  /* --- Shadows --- */
+  --mau-shadow-1: 0 10px 30px rgba(0,0,0,0.55);
+  --mau-shadow-2: 0 16px 42px rgba(0,0,0,0.65);
+
+  /* --- Radius --- */
+  --mau-r-xs: 6px;
+  --mau-r-sm: 10px;
+  --mau-r-md: 14px;
+  --mau-r-lg: 18px;
+
+  /* --- Spacing --- */
+  --mau-pad-1: 8px;
+  --mau-pad-2: 12px;
+  --mau-pad-3: 16px;
+  --mau-pad-4: 22px;
+
+  /* --- Motion --- */
+  --mau-fast: 120ms;
+  --mau-med: 240ms;
+  --mau-slow: 420ms;
+
+  /* --- Rainbow gradient (MAU signature) --- */
+  --mau-rainbow: linear-gradient(
+    90deg,
+    #ff004c,
+    #ff7b00,
+    #ffe600,
+    #00ff88,
+    #00cbff,
+    #ae00ff,
+    #ff004c
+  );
+
+  /* --- Steam-ish legacy palette hooks --- */
+  --steam-blue: #66c0f4;
+  --steam-blue-deep: #417a9b;
+  --steam-green: #a4d007;
+  --steam-red: #f45c66;
+  --steam-grey: #acb5bd;
+  --steam-dark: rgba(0,0,0,0.45);
+}
+
+/* ==========================================================
+   02) BASE / TYPO / LINKS / SCROLL
+========================================================== */
+body{
+  background: var(--mau-bg-0);
+  color: var(--mau-text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  letter-spacing: 0.15px;
+  overflow-x: hidden;
+}
+
+a{
+  color: var(--mau-accent);
+  text-decoration: none;
+}
+a:hover{ text-decoration: underline; }
+
+hr{
+  border: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--mau-border-strong), transparent);
+  margin: 16px 0;
+}
+
+::selection{
+  background: rgba(83,167,255,0.22);
+  color: var(--mau-text);
+}
+
+/* scrollbars (webkit) */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb{
+  background: linear-gradient(180deg, rgba(83,167,255,0.35), rgba(174,0,255,0.22));
+  border-radius: 999px;
+  border: 2px solid rgba(0,0,0,0.45);
+}
+*::-webkit-scrollbar-track{
+  background: rgba(255,255,255,0.04);
+}
+
+/* utility */
+.hidden{ display:none !important; }
+.mau-muted{ color: var(--mau-text-muted); }
+.mau-dim{ color: var(--mau-text-dim); }
+
+/* ==========================================================
+   03) GLOW ENGINE (gezähmt)
+========================================================== */
+@keyframes mau-rainbow-flow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 400% 50%; }
+}
+
+@keyframes mau-pulse {
+  0%   { box-shadow: var(--mau-glow-soft); }
+  50%  { box-shadow: var(--mau-glow-mid); }
+  100% { box-shadow: var(--mau-glow-soft); }
+}
+
+/* Soft glow helper (sparsam nutzen) */
+.mau-glow{
+  box-shadow: var(--mau-glow-soft);
+  transition: box-shadow var(--mau-med) ease;
+}
+.mau-glow:hover{ box-shadow: var(--mau-glow-mid); }
+
+/* Rainbow border helper (Event / focus / special) */
+.mau-rainbow-border{
+  position: relative;
+  border-radius: var(--mau-r-md);
+  isolation: isolate;
+}
+.mau-rainbow-border::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  border-radius: inherit;
+  background: var(--mau-rainbow);
+  background-size: 400%;
+  animation: mau-rainbow-flow 18s linear infinite;
+  z-index:-1;
+}
+
+/* Rainbow line (Topbar/Separator) */
+.mau-rainbow-line{
+  height: 3px;
+  width: 100%;
+  background: var(--mau-rainbow);
+  background-size: 400%;
+  animation: mau-rainbow-flow 15s linear infinite;
+  border-radius: 999px;
+  filter: drop-shadow(0 0 8px rgba(83,167,255,0.25));
+}
+
+/* ==========================================================
+   04) LAYOUT (App Shell)
+========================================================== */
+.app-shell{
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
+}
+
+.app-body{
+  display:block;
+  flex:1;
+  min-height: 0;
+}
+
+/* Sidebar (App Layout) */
+.sidebar{
+  width: 240px;
+  background: rgba(16,16,16,0.85);
+  border-right: 1px solid var(--mau-border);
+  padding: 16px;
+}
+.sidebar.is-collapsed{ width:72px; }
+
+.sidebar-menu ul{ list-style:none; padding:0; margin:0; }
+.menu-section{
+  margin-top: 12px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--mau-text-muted);
+}
+.menu-item a{
+  display:block;
+  padding: 8px 10px;
+  border-radius: var(--mau-r-xs);
+  color: var(--mau-text);
+  transition: background var(--mau-fast), color var(--mau-fast);
+}
+.menu-item a:hover{ background: rgba(255,255,255,0.06); }
+.menu-item.is-active a{
+  background: rgba(255,255,255,0.06);
+  color: var(--mau-accent);
+  font-weight: 700;
+}
+
+/* Topbar */
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding: 12px 16px;
+  background: rgba(17,17,17,0.86);
+  border-bottom: 1px solid var(--mau-border);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 22px rgba(0,0,0,0.55);
+}
+.topbar-right{ display:flex; align-items:center; gap: 12px; }
+.brand{ color: var(--mau-text); font-weight: 800; letter-spacing: 0.4px; }
+.topbar-nav ul{ list-style:none; display:flex; gap: 12px; padding:0; margin:0; }
+.topbar-link a{ color: var(--mau-text); padding: 6px 8px; border-radius: var(--mau-r-xs); }
+.topbar-link.is-active a{ background: rgba(255,255,255,0.06); color: var(--mau-accent); }
+
+/* Content */
+.app-content{
+  flex:1;
+  min-width:0;
+  padding: 24px;
+}
+
+/* Panels */
+.panel-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+.panel{
+  background: rgba(16,16,16,0.86);
+  border: 1px solid var(--mau-border);
+  border-radius: var(--mau-r-md);
+  overflow:hidden;
+  box-shadow: var(--mau-shadow-1);
+}
+.panel-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--mau-border);
+}
+.panel-subtitle{
+  margin:0;
+  font-size: 0.9rem;
+  color: var(--mau-text-muted);
+}
+.panel-body{ padding: 16px; }
+
+/* ==========================================================
+   05) CONTROLS (Buttons / Inputs / Badges)
+========================================================== */
+
+/* --- Buttons (MAU modern base) --- */
+.mau-btn{
+  appearance:none;
+  border: 2px solid var(--mau-border);
+  background: rgba(20,20,20,0.85);
+  color: var(--mau-text);
+  padding: 10px 16px;
+  border-radius: var(--mau-r-sm);
+  font-weight: 700;
+  cursor:pointer;
+  transition: transform var(--mau-fast), border-color var(--mau-fast), box-shadow var(--mau-fast), background var(--mau-fast);
+}
+.mau-btn:hover{
+  border-color: rgba(83,167,255,0.70);
+  box-shadow: var(--mau-glow-soft);
+  transform: translateY(-1px);
+}
+.mau-btn:active{
+  transform: translateY(0px);
+  box-shadow: none;
+}
+.mau-btn.is-primary{
+  border-color: rgba(83,167,255,0.75);
+  background: rgba(83,167,255,0.14);
+}
+.mau-btn.is-danger{
+  border-color: rgba(255,107,107,0.70);
+  background: rgba(255,107,107,0.10);
+}
+.mau-btn.is-ghost{
+  background: transparent;
+  border-color: var(--mau-border);
+}
+
+/* --- Optional: MAU “Event Button” (Rainbow hover) --- */
+.mau-btn.is-event:hover{
+  border-color: transparent;
+  background: var(--mau-rainbow);
+  background-size: 400%;
+  animation: mau-rainbow-flow 13s linear infinite;
+  color: #000;
+  text-shadow: 0 0 6px rgba(255,255,255,0.6);
+  box-shadow:
+    0 0 6px rgba(83,167,255,0.35),
+    0 0 14px rgba(83,167,255,0.28),
+    0 0 26px rgba(83,167,255,0.20);
+}
+
+/* --- Inputs --- */
+.mau-label{
+  display:block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(154,203,255,0.92);
+  margin-bottom: 6px;
+  text-shadow: 0 0 4px rgba(83,167,255,0.25);
+}
+
+.mau-input,
+textarea.mau-input,
+select.mau-input{
+  width:100%;
+  background: rgba(11,11,11,0.92);
+  color: var(--mau-text);
+  border: 2px solid rgba(83,167,255,0.22);
+  border-radius: var(--mau-r-md);
+  padding: 10px 12px;
+  transition: border-color var(--mau-fast), box-shadow var(--mau-med), background var(--mau-fast);
+}
+
+.mau-input:hover{
+  border-color: rgba(83,167,255,0.45);
+}
+.mau-input:focus{
+  outline:none;
+  border-color: rgba(83,167,255,0.75);
+  box-shadow: var(--mau-glow-soft);
+}
+
+/* textarea helper */
+.mau-textarea{
+  min-height: 120px;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
+/* chips / badges */
+.badge{
+  display:inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--mau-border);
+  font-size: 0.85rem;
+}
+.badge.is-alert{ background: rgba(255,107,107,0.18); border-color: rgba(255,107,107,0.45); color: #fff; }
+.badge.is-ok{ background: rgba(69,212,131,0.16); border-color: rgba(69,212,131,0.45); color: var(--mau-success); }
+
+/* ==========================================================
+   06) OVERLAYS (Modal / Tooltip / Context)
+========================================================== */
+.mau-modal-overlay,
+#mau-modal-overlay{
+  position:fixed;
+  inset:0;
+  background: rgba(0,0,0,0.55);
+  z-index: 9980;
+  backdrop-filter: blur(8px);
+}
+
+.mau-modal-window{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform: translate(-50%,-50%);
+  background: rgba(16,16,16,0.92);
+  border: 1px solid var(--mau-border-strong);
+  border-radius: var(--mau-r-md);
+  padding: 20px;
+  min-width: 320px;
+  max-width: min(720px, 92vw);
+  z-index: 9981;
+  box-shadow: var(--mau-shadow-2);
+}
+
+.mau-tooltip{
+  position: fixed;
+  background: rgba(18,18,18,0.92);
+  color: var(--mau-text);
+  border: 1px solid var(--mau-border-strong);
+  padding: 6px 10px;
+  border-radius: var(--mau-r-xs);
+  font-size: 0.8rem;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.7);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity var(--mau-fast) ease, transform var(--mau-fast) ease;
+  z-index: 9999;
+}
+.mau-tooltip.visible{
+  opacity:1;
+  transform: translateY(0);
+}
+
+.mau-context-menu{
+  position: fixed;
+  background: rgba(18,18,18,0.95);
+  border: 1px solid var(--mau-border-strong);
+  border-radius: var(--mau-r-sm);
+  padding: 4px 0;
+  min-width: 160px;
+  box-shadow: var(--mau-shadow-2);
+  z-index: 9999;
+}
+.mau-context-menu .item{
+  padding: 8px 12px;
+  cursor:pointer;
+  color: var(--mau-text);
+}
+.mau-context-menu .item:hover{
+  background: rgba(255,255,255,0.06);
+  color: var(--mau-accent);
+}
+
+/* ==========================================================
+   07) BOOT + AUTH (Login/Boot)
+========================================================== */
+#mau-boot{
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  background:#000;
+}
+
+.mau-logo{
+  width: 260px;
+  height: 260px;
+  background: var(--mau-rainbow);
+  background-size: 400% 400%;
+  animation: mau-rainbow-flow 8s linear infinite, mau-pulse 3s ease-in-out infinite;
+  /* wenn du SVG mask nutzt, bleibt das kompatibel */
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  filter: drop-shadow(0 0 15px rgba(83,167,255,0.55));
+}
+
+#boot-text{
+  background: rgba(25,25,25,0.85);
+  margin-top: 40px;
+  padding: 16px 28px;
+  border-radius: var(--mau-r-md);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 1.05rem;
+  color: #ff8a00;
+  min-width: 320px;
+  text-align:center;
+  box-shadow: 0 0 25px rgba(0,0,0,0.6);
+}
+
+.mau-progress{
+  width: 320px;
+  height: 8px;
+  border-radius: 999px;
+  background: #222;
+  margin-top: 18px;
+  overflow:hidden;
+}
+.mau-progress-bar{
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg,#ff8a00,#ffd000);
+}
+
+/* Auth overlay */
+.mau-overlay{
+  position: fixed;
+  inset:0;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(10px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index: 9999;
+  transition: opacity 1s ease;
+}
+.mau-overlay.fade-out{
+  opacity:0;
+  pointer-events:none;
+}
+
+.auth-box{
+  background: rgba(20,25,31,0.92);
+  padding: 30px;
+  border-radius: var(--mau-r-md);
+  width: 340px;
+  display:flex;
+  flex-direction:column;
+  gap: 12px;
+  text-align:center;
+  color: var(--mau-text);
+  box-shadow: var(--mau-shadow-2);
+  border: 1px solid rgba(83,167,255,0.14);
+}
+.auth-view{ display:none; }
+.auth-view.active{ display:flex; flex-direction:column; gap: 12px; }
+
+.auth-error{
+  margin-top: 4px;
+  color: var(--mau-danger);
+  font-size: 0.85rem;
+  display:none;
+}
+.linkSwitch{
+  cursor:pointer;
+  color: rgba(142,200,255,0.95);
+  font-size: 0.85rem;
+}
+
+/* ==========================================================
+   08) DESKTOP OS (Windows + Launcher)
+========================================================== */
+#mau-desktop{
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 70px);
+  background: var(--mau-bg-0);
+  overflow: hidden;
+}
+
+/* OS Sidebar */
+.mau-sidebar{
+  position:absolute;
+  top:0; left:0;
+  width:72px;
+  height:100%;
+  background: rgba(13,13,13,0.95);
+  border-right: 1px solid rgba(255,255,255,0.10);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding-top: 20px;
+  gap: 12px;
+  z-index: 900;
+}
+
+.mau-sidebar-btn{
+  width: 52px;
+  height: 52px;
+  background: rgba(20,20,20,0.92);
+  border-radius: var(--mau-r-md);
+  border: 2px solid rgba(255,255,255,0.14);
+  color: rgba(232,236,243,0.82);
+  font-size: 1.2rem;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition: border-color var(--mau-med), box-shadow var(--mau-med), transform var(--mau-fast);
+}
+.mau-sidebar-btn:hover{
+  border-color: var(--mau-accent);
+  box-shadow: var(--mau-glow-soft);
+  transform: translateY(-1px);
+}
+
+#mau-window-area{
+  position:absolute;
+  left:72px; top:0; right:0; bottom:0;
+  overflow: visible;
+}
+
+/* Window */
+.mau-window{
+  position:absolute;
+  background: rgba(15,15,15,0.96);
+  border: 2px solid rgba(255,255,255,0.12);
+  border-radius: var(--mau-r-sm);
+  width: 600px;
+  height: 380px;
+  box-shadow: 0 0 35px rgba(0,0,0,0.55);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  z-index: 10;
+  transition: box-shadow var(--mau-med) ease, border-color var(--mau-med) ease;
+}
+
+.mau-window.active{
+  border-color: var(--mau-accent);
+  box-shadow: var(--mau-glow-mid);
+  z-index: 999;
+}
+
+.mau-window-header{
+  background: rgba(26,26,26,0.96);
+  padding: 10px 14px;
+  color: rgba(232,236,243,0.92);
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+  cursor: move;
+  user-select:none;
+}
+
+.mau-window-title{
+  font-size: 1rem;
+  font-weight: 700;
+  pointer-events:none;
+}
+
+.mau-window-close{
+  font-size: 18px;
+  cursor: pointer;
+  opacity: 0.75;
+  transition: opacity var(--mau-fast), transform var(--mau-fast), color var(--mau-fast);
+}
+.mau-window-close:hover{
+  opacity: 1;
+  transform: scale(1.15);
+  color: var(--mau-danger);
+}
+
+.mau-window-body{
+  flex:1;
+  padding: 16px;
+  overflow:auto;
+  color: rgba(232,236,243,0.90);
+  font-size: 0.95rem;
+}
+
+/* Dragging state */
+.mau-window.dragging{
+  opacity: 0.86;
+  transform: scale(0.99);
+  transition: none;
+}
+
+/* Resize handle (optional) */
+.mau-resize{
+  position:absolute;
+  width: 15px;
+  height: 15px;
+  bottom:0; right:0;
+  cursor: se-resize;
+}
+
+/* ==========================================================
+   09) PRIO (Hookpoints + kompatibel)
+   (Deine Prio-Styles aus GlowEngine können hier weiter rein;
+    aktuell nur kompatible Basis, damit nichts “explodiert”.)
+========================================================== */
+.prio-row{
+  background: rgba(16,16,16,0.92);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: var(--mau-r-sm);
+  margin-bottom: 14px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.5);
+  overflow: visible !important;
+}
+
+.prio-rainbow-pill{
+  position: relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding: 14px 18px;
+  border-radius: var(--mau-r-sm);
+  font-weight: 900;
+  font-size: 1.05rem;
+  background: rgba(17,17,17,0.96);
+  color: #fff;
+  text-align:center;
+  z-index: 1;
+}
+.prio-rainbow-pill::before{
+  content:"";
+  position:absolute;
+  inset:-3px;
+  border-radius: calc(var(--mau-r-sm) + 2px);
+  background: var(--mau-rainbow);
+  background-size: 400%;
+  animation: mau-rainbow-flow 25s linear infinite;
+  z-index:-1;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+}
+
+/* ==========================================================
+   10) LEGACY ADAPTERS
+   - Steam button classes bleiben nutzbar
+   - aber hängen jetzt an MAU Tokens (wenn möglich)
+========================================================== */
+
+/* --- Steam-ish innerfade buttons: “Wrapper” look erhalten,
+       aber Farben über Variablen steuerbar --- */
+
+.btn_green_white_innerfade,
+.btn_blue_white_innerfade,
+.btn_darkblue_white_innerfade,
+.btn_darkred_white_innerfade,
+.btn_grey_white_innerfade,
+.btn_grey_grey,
+.btn_grey_grey_outer_bevel,
+.btn_grey_black,
+.btn_black,
+.btnv6_blue_hoverfade,
+.btnv6_lightblue_blue{
+  border-radius: 2px;
+  border: none;
+  padding: 1px;
+  display: inline-block;
+  cursor: pointer;
+  text-decoration: none !important;
+  user-select: none;
+}
+
+/* “Steam green” -> MAU success-ish, aber Steam bleibt Steam */
+.btn_green_white_innerfade{
+  color: #D2E885 !important;
+  background: linear-gradient(to bottom, var(--steam-green) 5%, #536904 95%);
+}
+.btn_green_white_innerfade > span{
+  border-radius: 2px;
+  display:block;
+  background: linear-gradient(to bottom, #799905 5%, #536904 95%);
+}
+.btn_green_white_innerfade:hover{
+  color: #fff !important;
+  background: linear-gradient(to bottom, #b6d908 5%, #80a006 95%);
+}
+.btn_green_white_innerfade:hover > span{
+  background: linear-gradient(to bottom, #a1bf07 5%, #80a006 95%);
+}
+
+/* Steam blue */
+.btn_blue_white_innerfade{
+  color:#fff !important;
+  background: linear-gradient(to bottom, #aaceff 5%, #3c6091 95%);
+}
+.btn_blue_white_innerfade > span{
+  border-radius:2px;
+  display:block;
+  background: linear-gradient(to bottom, #82a6d7 5%, #3c6091 95%);
+}
+.btn_blue_white_innerfade:hover{
+  background: linear-gradient(to bottom, #bbd8ff 5%, #4873a7 95%);
+}
+.btn_blue_white_innerfade:hover > span{
+  background: linear-gradient(to bottom, #9ab7de 5%, #4873a7 95%);
+}
+
+/* Steam darkblue */
+.btn_darkblue_white_innerfade{
+  color:#A4D7F5 !important;
+  background: linear-gradient(to bottom, rgba(47,137,188,1) 5%, rgba(23,67,92,1) 95%);
+}
+.btn_darkblue_white_innerfade > span{
+  border-radius:2px;
+  display:block;
+  background: linear-gradient(to bottom, rgba(33,101,138,1) 5%, rgba(23,67,92,1) 95%);
+}
+.btn_darkblue_white_innerfade:hover{
+  color:#fff !important;
+  background: linear-gradient(to bottom, rgba(102,192,244,1) 5%, rgba(47,137,188,1) 95%);
+}
+.btn_darkblue_white_innerfade:hover > span{ background: transparent; }
+
+/* Steam darkred */
+.btn_darkred_white_innerfade{
+  color:#F5D7A4 !important;
+  background: linear-gradient(to bottom, rgba(188,47,47,1) 5%, rgba(92,37,23,1) 95%);
+}
+.btn_darkred_white_innerfade > span{
+  border-radius:2px;
+  display:block;
+  background: linear-gradient(to bottom, rgba(138,51,33,1) 5%, rgba(92,37,23,1) 95%);
+}
+.btn_darkred_white_innerfade:hover{
+  color:#fff !important;
+  background: linear-gradient(to bottom, var(--steam-red) 5%, rgba(188,67,47,1) 95%);
+}
+.btn_darkred_white_innerfade:hover > span{ background: transparent; }
+
+/* Steam-ish “hoverfade” but MAU-compatible */
+.btnv6_blue_hoverfade{
+  color: var(--steam-blue) !important;
+  background: rgba(103,193,245,0.2);
+}
+.btnv6_blue_hoverfade > span{ display:block; border-radius:2px; background:transparent; }
+.btnv6_blue_hoverfade:hover{
+  color:#fff !important;
+  background: linear-gradient(-60deg, var(--steam-blue-deep) 5%, var(--steam-blue) 95%);
+}
+
+/* Adapter: old MAU ".mau-btn" margin reset (dein v2.1 hatte margin:25px) */
+.mau-btn{
+  margin: 0; /* wichtig: Buttons sollen nicht “von allein” Layout kaputt machen */
+}
+
+/* Forced colors safety (Accessibility) */
+@media (forced-colors: active){
+  .mau-btn,
+  .mau-input,
+  .panel,
+  .mau-window{
+    forced-color-adjust: auto;
+    border: 1px solid ButtonBorder;
+  }
+}
+
+/* ===== SIDEBAR FINAL ===== */
+.sidebar {
+    position: fixed;
+    top: 56px;              /* HÖHE DER TOPBAR */
+    left: 0;
+    width: 240px;
+    height: calc(100vh - 56px);
+
+    background: #0b0b0b;
+    border-right: 1px solid var(--mau-border);
+
+    transform: translateX(-100%); /* STANDARD: WEG */
+    transition: transform 0.25s ease;
+
+    z-index: 900; /* unter Topbar */
+}
+
+/* sichtbar */
+.sidebar.is-open {
+    transform: translateX(0);
+}
+.app-content {
+    margin-left: 0 !important;
+    padding: 24px;
+}
+.topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    z-index: 1000;
+}
+.app-body {
+    padding-top: 59px;
+}
+.mau-rainbow-line {
+    position: fixed;
+    top: 56px;              /* direkt UNTER der Topbar */
+    left: 0;
+    right: 0;
+    height: 3px;
+	box-shadow: 0 0 8px rgba(180,80,255,0.6);
+    z-index: 999;
+}
+/* ===== AUTH OVERLAY ===== */
+.auth-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 2000;
+}
+
+.auth-modal {
+    width: 100%;
+    max-width: 360px;
+
+    background: linear-gradient(180deg, #121212, #0a0a0a);
+    border-radius: 14px;
+    padding: 24px;
+
+    box-shadow:
+        0 0 0 1px rgba(255,255,255,0.06),
+        0 20px 60px rgba(0,0,0,0.8);
+}
+
+.auth-modal h1 {
+    margin-bottom: 16px;
+    font-size: 1.2rem;
+}
+
+.auth-modal input {
+    width: 100%;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+
+    background: #0e0e0e;
+    border: 1px solid var(--mau-border);
+    border-radius: 8px;
+    color: var(--mau-text);
+}
+
+.auth-modal .button {
+    width: 100%;
+    margin-top: 8px;
+}
+
+.auth-error {
+    margin-bottom: 12px;
+    padding: 8px 10px;
+    background: rgba(255, 80, 80, 0.15);
+    border-left: 3px solid #ff5555;
+    font-size: 0.85rem;
+}
+/* Auth switch (Login <-> Register) */
+.auth-switch {
+    margin-top: 14px;
+    text-align: center;
+}
+
+.link-button {
+    background: none;
+    border: none;
+    color: var(--mau-accent);
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.link-button:hover {
+    text-decoration: underline;
+}
+.achievement-toast{
+  position:fixed;
+  right:20px;
+  bottom:20px;
+  background:#111;
+  color:#caffc6;
+  padding:14px 18px;
+  border-radius:12px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.1),0 20px 40px rgba(0,0,0,.8);
+  cursor:pointer;
+  animation:toastInOut 10s ease forwards;
+  z-index:3000;
+}
+
+@keyframes toastInOut{
+  0%{opacity:0;transform:translateY(20px)}
+  10%{opacity:1;transform:translateY(0)}
+  80%{opacity:1}
+  100%{opacity:0;transform:translateY(20px)}
+}
+
+.hidden{display:none}
+
+.achievement-list{
+  list-style:none;
+  padding:0;
+}
+.achievement-list li{
+  margin-bottom:12px;
+}
+/* User Menu */
+.user-menu {
+    position: relative;
+}
+
+.user-name {
+    cursor: pointer;
+}
+
+.user-dropdown {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: #1e1e1e;
+    border: 1px solid #333;
+    min-width: 160px;
+    display: none;
+    z-index: 1000;
+}
+
+.user-dropdown.open {
+    display: block;
+}
+
+.user-dropdown a {
+    display: block;
+    padding: 8px 12px;
+    text-decoration: none;
+}
+
+.user-dropdown hr {
+    border: none;
+    border-top: 1px solid #333;
+    margin: 6px 0;
+}
+
+/* Profile blocks */
+.profile-block {
+    margin-bottom: 12px;
+}
+#rpg-scene-shell {
+    display:flex;
+    height: calc(100vh - 140px); /* Topbar + Footer */
+}
+
+.rpg-scene-list {
+    width: 260px;
+    background: rgba(10,10,10,0.6);
+    border-right: 1px solid var(--mau-border);
+}
+
+.rpg-stage {
+    position: relative;
+    flex:1;
+    overflow:hidden;
+}
+
+.rpg-bg {
+    position:absolute;
+    inset:0;
+    background-size:cover;
+    background-position:center;
+    transition: opacity 3s ease;
+}
+
+.rpg-mood-layer {
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+}
+#mood-layer.sunny { opacity:0; }
+
+#mood-layer.fog {
+    background:rgba(200,200,200,0.25);
+    filter:blur(20px);
+    opacity:1;
+}
+
+#mood-layer.rain {
+    background-image:linear-gradient(
+      rgba(255,255,255,.2) 1px,
+      transparent 1px
+    );
+    background-size:2px 12px;
+    animation:rain 0.5s linear infinite;
+    opacity:0.4;
+}
+
+@keyframes rain {
+    from { background-position:0 0; }
+    to { background-position:0 12px; }
+}
+
+#mood-layer.storm {
+    background:rgba(0,0,0,0.4);
+    opacity:1;
+}
