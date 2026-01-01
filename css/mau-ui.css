@@ -901,6 +901,9 @@ select.mau-input{
 	box-shadow: 0 0 8px rgba(180,80,255,0.6);
     z-index: 999;
 }
+body.auth-locked .app-shell {
+    display: none;
+}
 /* ===== AUTH OVERLAY ===== */
 .auth-overlay {
     position: fixed;

@@ -1,7 +1,8 @@
 <?php
 // Erwartet: $auth (aus init.php), optional $pageTitle
 $currentPage = basename($_SERVER['PHP_SELF']);
-$username = $_SESSION['username'] ?? 'User';
+$username = $auth->getUsername() ?? 'User';
+$authLocked = !$auth->isLoggedIn() && empty($isPublicAuthRoute);
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -11,7 +12,7 @@ $username = $_SESSION['username'] ?? 'User';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/css/mau-ui.css">
 </head>
-<body>
+<body class="<?= $authLocked ? 'auth-locked' : '' ?>">
 
 <div class="app-shell">
 
@@ -77,3 +78,18 @@ $username = $_SESSION['username'] ?? 'User';
 </aside>
 
 <div class="app-content">
+
+<?php if ($auth->isLoggedIn() && !$auth->isEmailVerified()): ?>
+    <?php $daysRemaining = $auth->getVerificationDaysRemaining(); ?>
+    <div class="panel mau-warning">
+        <div class="panel-body">
+            <div class="auth-error">
+                Bitte verifiziere deine E-Mail, sonst wird dein Account in <?= $daysRemaining ?> Tagen gelöscht.
+            </div>
+            <form method="post">
+                <input type="hidden" name="action" value="request_email_verification">
+                <button class="button">Verifizierungs-Mail erneut senden</button>
+            </form>
+        </div>
+    </div>
+<?php endif; ?>
