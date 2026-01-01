@@ -1,7 +1,5 @@
 <?php
 require_once __DIR__ . '/includes/init.php';
-$auth->requireLogin();
-
 require_once __DIR__ . '/includes/header.php';
 ?>
 

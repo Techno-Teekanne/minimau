@@ -11,33 +11,25 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 $db = db_connect();
 $auth = new AuthService($db);
 
-/* Auto-Login */
-$auth->autoLoginFromCookie();
+/* Cleanup */
+$auth->cleanupUnverifiedAccounts();
+
+/* Auth Session */
+$auth->bootstrapSession();
+
+/* UI State */
+$authMode = 'login';
+$authError = null;
+$usernameError = null;
 
 /* POST */
 require_once __DIR__ . '/auth-handler.php';
 
+/* Public Auth Routes */
+$currentPage = basename($_SERVER['PHP_SELF']);
+$isPublicAuthRoute = in_array($currentPage, ['verify-email.php'], true);
+
 /* Status */
 $isLoggedIn = $auth->isLoggedIn();
-$showAuth = !$isLoggedIn;
+$showAuth = !$isLoggedIn && !$isPublicAuthRoute;
 $forceUsername = $isLoggedIn && $auth->needsUsernameSetup();
-
-/* Session Ablauf */
-$sessionExpiringSoon = false;
-if ($isLoggedIn) {
-    if ($_SESSION['session_expires'] < time()) {
-        $auth->logout();
-        header('Location: /index.php');
-        exit;
-    }
-    if ($_SESSION['session_expires'] < time() + 3600) {
-        $sessionExpiringSoon = true;
-    }
-}
-
-/* UI Status */
-$authMode = $_SESSION['auth_mode'] ?? 'login';
-$authError = $_SESSION['auth_error'] ?? null;
-$usernameError = $_SESSION['username_error'] ?? null;
-
-unset($_SESSION['auth_mode'], $_SESSION['auth_error'], $_SESSION['username_error']);
